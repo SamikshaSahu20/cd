@@ -1,0 +1,25 @@
+%{
+#include <stdio.h>
+%}
+
+%%
+
+//[^\n]*                         ; // Remove single-line comments
+"//".*                          ; // Alternative pattern for single-line
+
+"/*"([^*]|\*+[^*/])*\*+"/"      ; // Remove multi-line comments
+
+[ \t\n]+                        { printf("%s", yytext); } // Keep spacing
+
+.                               { printf("%s", yytext); } // Print other characters
+
+%%
+
+int main() {
+    yylex();
+    return 0;
+}
+
+int yywrap() {
+    return 1;
+}
