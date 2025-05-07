@@ -1,0 +1,223 @@
+16]implement common sub expression elimination optimization on input quadraples c.
+package cd_ese;
+
+import java.util.*;
+
+class Quadruple {
+    String op, arg1, arg2, result;
+
+    public Quadruple(String op, String arg1, String arg2, String result) {
+        this.op = op;
+        this.arg1 = arg1;
+        this.arg2 = arg2;
+        this.result = result;
+    }
+
+    @Override
+    public String toString() {
+        if (op.equals("assign")) {
+            return result + " = " + arg1;
+        } else {
+            return result + " = " + arg1 + " " + op + " " + arg2;
+        }
+    }
+}
+
+public class CSEOptimization {
+
+    public static List<Quadruple> commonSubexpressionElimination(List<Quadruple> quadruples) {
+        Map<String, Pair> exprTable = new HashMap<>();
+        Map<String, Integer> varDefs = new HashMap<>();
+        List<Quadruple> optimized = new ArrayList<>();
+
+        for (int i = 0; i < quadruples.size(); i++) {
+            Quadruple q = quadruples.get(i);
+            String key = q.op + "|" + q.arg1 + "|" + q.arg2;
+
+            if (exprTable.containsKey(key)) {
+                Pair prev = exprTable.get(key);
+
+                boolean arg1Safe = !varDefs.containsKey(q.arg1) || varDefs.get(q.arg1) < prev.index;
+                boolean arg2Safe = !varDefs.containsKey(q.arg2) || varDefs.get(q.arg2) < prev.index;
+
+                if (arg1Safe && arg2Safe) {
+                    optimized.add(new Quadruple("assign", prev.result, "", q.result));
+                    varDefs.put(q.result, i);
+                    continue;
+                }
+            }
+
+            exprTable.put(key, new Pair(q.result, i));
+            varDefs.put(q.result, i);
+            optimized.add(q);
+        }
+
+        return optimized;
+    }
+
+    public static void printQuadruples(List<Quadruple> quads, String title) {
+        System.out.println("\n" + title);
+        System.out.println("-".repeat(title.length()));
+        for (int i = 0; i < quads.size(); i++) {
+            System.out.println(i + ": " + quads.get(i));
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        List<Quadruple> quadruples = new ArrayList<>();
+
+        System.out.print("Enter number of quadruples: ");
+        int n = Integer.parseInt(scanner.nextLine());
+
+        System.out.println("Enter each quadruple in the format: op arg1 arg2 result");
+        for (int i = 0; i < n; i++) {
+            System.out.print("Quadruple " + (i + 1) + ": ");
+            String[] parts = scanner.nextLine().trim().split("\\s+");
+            if (parts.length != 4) {
+                System.out.println("Invalid input. Please enter 4 elements.");
+                i--;
+                continue;
+            }
+            quadruples.add(new Quadruple(parts[0], parts[1], parts[2], parts[3]));
+        }
+
+        printQuadruples(quadruples, "Original Quadruples");
+        List<Quadruple> optimized = commonSubexpressionElimination(quadruples);
+        printQuadruples(optimized, "Optimized Quadruples (After CSE)");
+    }
+
+    static class Pair {
+        String result;
+        int index;
+
+        public Pair(String result, int index) {
+            this.result = result;
+            this.index = index;
+        }
+    }
+}
+//+ a b t1
+//* t1 c t2
+//+ a b t3
+//* t3 d t4
+//2nd
+//+ a b t1
+//* t1 c t2
+//+ a b t3
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define MAX 100
+
+typedef struct {
+    char op[10];
+    char arg1[20];
+    char arg2[20];
+    char result[20];
+} Quadruple;
+
+typedef struct {
+    char key[100];
+    char result[20];
+    int index;
+} ExprEntry;
+
+int varDefIndex(char var[], int defCount, char defs[][20], int indices[]) {
+    int i;
+    for (i = 0; i < defCount; i++) {
+        if (strcmp(var, defs[i]) == 0) {
+            return indices[i];
+        }
+    }
+    return -1;
+}
+
+void addVarDef(char var[], int index, int *defCount, char defs[][20], int indices[]) {
+    strcpy(defs[*defCount], var);
+    indices[*defCount] = index;
+    (*defCount)++;
+}
+
+int main() {
+    int n;
+    Quadruple quads[MAX], optimized[MAX];
+    ExprEntry exprTable[MAX];
+    char varDefs[MAX][20];
+    int varDefIndexList[MAX];
+    int defCount = 0, exprCount = 0, optCount = 0;
+    int i, j;
+
+    printf("Enter number of quadruples: ");
+    scanf("%d", &n);
+    getchar(); // consume newline
+
+    printf("Enter each quadruple in the format: op arg1 arg2 result\n");
+    for (i = 0; i < n; i++) {
+        printf("Quadruple %d: ", i + 1);
+        scanf("%s %s %s %s", quads[i].op, quads[i].arg1, quads[i].arg2, quads[i].result);
+    }
+
+    // Optimization pass
+    for (i = 0; i < n; i++) {
+        Quadruple q = quads[i];
+        char key[100];
+        int found = 0;
+        int arg1Index, arg2Index;
+
+        sprintf(key, "%s|%s|%s", q.op, q.arg1, q.arg2);
+
+        for (j = 0; j < exprCount; j++) {
+            if (strcmp(exprTable[j].key, key) == 0) {
+                arg1Index = varDefIndex(q.arg1, defCount, varDefs, varDefIndexList);
+                arg2Index = varDefIndex(q.arg2, defCount, varDefs, varDefIndexList);
+
+                if ((arg1Index == -1 || arg1Index < exprTable[j].index) &&
+                    (arg2Index == -1 || arg2Index < exprTable[j].index)) {
+                    // Common subexpression found and valid
+                    strcpy(optimized[optCount].op, "assign");
+                    strcpy(optimized[optCount].arg1, exprTable[j].result);
+                    strcpy(optimized[optCount].arg2, "");
+                    strcpy(optimized[optCount].result, q.result);
+                    optCount++;
+
+                    addVarDef(q.result, i, &defCount, varDefs, varDefIndexList);
+                    found = 1;
+                    break;
+                }
+            }
+        }
+
+        if (!found) {
+            strcpy(exprTable[exprCount].key, key);
+            strcpy(exprTable[exprCount].result, q.result);
+            exprTable[exprCount].index = i;
+            exprCount++;
+
+            optimized[optCount++] = q;
+            addVarDef(q.result, i, &defCount, varDefs, varDefIndexList);
+        }
+    }
+
+    // Print Original Quadruples
+    printf("\nOriginal Quadruples\n--------------------\n");
+    for (i = 0; i < n; i++) {
+        if (strcmp(quads[i].op, "assign") == 0)
+            printf("%d: %s = %s\n", i, quads[i].result, quads[i].arg1);
+        else
+            printf("%d: %s = %s %s %s\n", i, quads[i].result, quads[i].arg1, quads[i].op, quads[i].arg2);
+    }
+
+    // Print Optimized Quadruples
+    printf("\nOptimized Quadruples (After CSE)\n---------------------------------\n");
+    for (i = 0; i < optCount; i++) {
+        if (strcmp(optimized[i].op, "assign") == 0)
+            printf("%d: %s = %s\n", i, optimized[i].result, optimized[i].arg1);
+        else
+            printf("%d: %s = %s %s %s\n", i, optimized[i].result, optimized[i].arg1, optimized[i].op, optimized[i].arg2);
+    }
+
+    return 0;
+}

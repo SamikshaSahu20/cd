@@ -1,0 +1,171 @@
+assign a _ t1
++ t1 b t2
+assign t2 _ t3
+* t3 c t4
+
+#include <stdio.h>
+#include <string.h>
+
+#define MAX 100
+
+// Structure to represent a quadruple
+typedef struct {
+    char op[10];
+    char arg1[10];
+    char arg2[10];
+    char result[10];
+} Quadruple;
+
+// Function to perform copy propagation
+void copyPropagation(Quadruple quads[], int n) {
+    int i, j;
+    char replacements[100][2][10]; // replacements[i][0] = old, replacements[i][1] = new
+    int repCount = 0;
+
+    for (i = 0; i < n; i++) {
+        // Detect copy assignment: result = arg1
+        if (strcmp(quads[i].op, "assign") == 0) {
+            strcpy(replacements[repCount][0], quads[i].result); // destination
+            strcpy(replacements[repCount][1], quads[i].arg1);   // source
+            repCount++;
+        }
+
+        // Apply all known replacements to current quad
+        for (j = 0; j < repCount; j++) {
+            if (strcmp(quads[i].arg1, replacements[j][0]) == 0) {
+                strcpy(quads[i].arg1, replacements[j][1]);
+            }
+            if (strcmp(quads[i].arg2, replacements[j][0]) == 0) {
+                strcpy(quads[i].arg2, replacements[j][1]);
+            }
+        }
+    }
+}
+
+// Function to print quadruples
+void printQuadruples(Quadruple quads[], int n, const char* title) {
+    int i;
+    printf("\n%s\n", title);
+    printf("-----------------------------\n");
+    for (i = 0; i < n; i++) {
+        if (strcmp(quads[i].op, "assign") == 0) {
+            printf("%d: %s = %s\n", i, quads[i].result, quads[i].arg1);
+        } else {
+            printf("%d: %s = %s %s %s\n", i, quads[i].result, quads[i].arg1, quads[i].op, quads[i].arg2);
+        }
+    }
+}
+
+int main() {
+    int n, i;
+    Quadruple quads[MAX];
+
+    printf("Enter the number of quadruples: ");
+    scanf("%d", &n);
+
+    printf("Enter each quadruple in the format: op arg1 arg2 result\n");
+    printf("Use 'assign' as op for copy statements (e.g., t1 = a -> assign a _ t1)\n");
+
+    for (i = 0; i < n; i++) {
+        printf("Quadruple %d: ", i + 1);
+        scanf("%s %s %s %s", quads[i].op, quads[i].arg1, quads[i].arg2, quads[i].result);
+    }
+
+    printQuadruples(quads, n, "Original Quadruples");
+
+    copyPropagation(quads, n);
+
+    printQuadruples(quads, n, "Optimized Quadruples (After Copy Propagation)");
+
+    return 0;
+}
+---------------------------------------------------------------------------------------------------------------
+package cd_ese;
+
+import java.util.*;
+
+class Quadruple {
+    String op, arg1, arg2, result;
+
+    public Quadruple(String op, String arg1, String arg2, String result) {
+        this.op = op;
+        this.arg1 = arg1;
+        this.arg2 = arg2;
+        this.result = result;
+    }
+
+    @Override
+    public String toString() {
+        if (op.equals("assign")) {
+            return result + " = " + arg1;
+        } else {
+            return result + " = " + arg1 + " " + op + " " + arg2;
+        }
+    }
+}
+
+public class CopyPropagation {
+
+    public static void copyPropagation(List<Quadruple> quads) {
+        List<String[]> replacements = new ArrayList<>();
+
+        for (int i = 0; i < quads.size(); i++) {
+            Quadruple q = quads.get(i);
+
+            // If it's an assignment like "t1 = a"
+            if (q.op.equals("assign")) {
+                replacements.add(new String[]{q.result, q.arg1});
+            }
+
+            // Apply replacements
+            for (String[] rep : replacements) {
+                if (q.arg1.equals(rep[0])) {
+                    q.arg1 = rep[1];
+                }
+                if (q.arg2.equals(rep[0])) {
+                    q.arg2 = rep[1];
+                }
+            }
+        }
+    }
+
+    public static void printQuadruples(List<Quadruple> quads, String title) {
+        System.out.println("\n" + title);
+        System.out.println("-----------------------------");
+        for (int i = 0; i < quads.size(); i++) {
+            System.out.println(i + ": " + quads.get(i));
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        List<Quadruple> quads = new ArrayList<>();
+
+        System.out.print("Enter the number of quadruples: ");
+        int n = Integer.parseInt(scanner.nextLine());
+
+        System.out.println("Enter each quadruple in the format: op arg1 arg2 result");
+        System.out.println("Use 'assign' as op for copy statements (e.g., t1 = a → assign a _ t1)");
+
+        for (int i = 0; i < n; i++) {
+            System.out.print("Quadruple " + (i + 1) + ": ");
+            String[] parts = scanner.nextLine().trim().split("\\s+");
+            if (parts.length != 4) {
+                System.out.println("Invalid input. Please enter 4 elements.");
+                i--;
+                continue;
+            }
+            quads.add(new Quadruple(parts[0], parts[1], parts[2], parts[3]));
+        }
+
+        printQuadruples(quads, "Original Quadruples");
+        copyPropagation(quads);
+        printQuadruples(quads, "Optimized Quadruples (After Copy Propagation)");
+    }
+}
+4
+//assign a _ t1
+//+ t1 b t2
+//assign t2 _ t3
+//* t3 c t4
+

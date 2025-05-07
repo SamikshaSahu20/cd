@@ -1,0 +1,148 @@
+package cd_ese;
+
+import java.util.Scanner;
+import java.util.regex.*;
+
+public class StrengthReductionOptimizer {
+
+    public static String optimize(String code) {
+        // Pattern to match assignment with multiplication: var = var * constant;
+        Pattern pattern = Pattern.compile("(\\w+)\\s*=\\s*(\\w+)\\s*\\*\\s*(\\d+)\\s*;");
+        Matcher matcher = pattern.matcher(code);
+        StringBuffer optimizedCode = new StringBuffer();
+
+        while (matcher.find()) {
+            String resultVar = matcher.group(1);
+            String operand = matcher.group(2);
+            int constant = Integer.parseInt(matcher.group(3));
+            String replacement;
+
+            if (isPowerOfTwo(constant)) {
+                int shiftAmount = Integer.numberOfTrailingZeros(constant);
+                replacement = resultVar + " = " + operand + " << " + shiftAmount + ";";
+            } else if (constant <= 5) {  // Replace with repeated addition for small constants
+                StringBuilder addExpr = new StringBuilder(operand);
+                for (int i = 1; i < constant; i++) {
+                    addExpr.append(" + ").append(operand);
+                }
+                replacement = resultVar + " = " + addExpr.toString() + ";";
+            } else {
+                replacement = matcher.group(0);  // No optimization
+            }
+
+            matcher.appendReplacement(optimizedCode, replacement);
+        }
+
+        matcher.appendTail(optimizedCode);
+        return optimizedCode.toString();
+    }
+
+    private static boolean isPowerOfTwo(int n) {
+        return n > 0 && (n & (n - 1)) == 0;
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter code lines (end input with an empty line):");
+
+        StringBuilder inputCode = new StringBuilder();
+        String line;
+        while (!(line = scanner.nextLine()).isEmpty()) {
+            inputCode.append(line).append("\n");
+        }
+
+        String optimized = optimize(inputCode.toString());
+        System.out.println("\nOptimized Code:\n" + optimized);
+    }
+}
+//a = b * 8;
+//x = y * 3;
+//z = w * 6;
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+#define MAX_LINES 100
+#define MAX_LEN 256
+
+int is_power_of_two(int n) {
+    return n > 0 && (n & (n - 1)) == 0;
+}
+
+int log2_int(int n) {
+    int count = 0;
+    while (n >>= 1) count++;
+    return count;
+}
+
+void trim(char *str) {
+    char *end;
+    while (isspace((unsigned char)*str)) str++;
+    if (*str == 0) return;
+
+    end = str + strlen(str) - 1;
+    while (end > str && isspace((unsigned char)*end)) end--;
+
+    end[1] = '\0';
+}
+
+void optimize_line(char *line, char *output) {
+    char var1[32], var2[32];
+    int constant;
+
+    if (sscanf(line, "%31s = %31s * %d;", var1, var2, &constant) == 3) {
+        char *star = strchr(var2, '*');
+        if (star) *star = '\0';
+
+        if (is_power_of_two(constant)) {
+            int shift = log2_int(constant);
+            sprintf(output, "%s = %s << %d;", var1, var2, shift);
+        } else if (constant <= 5) {
+            int i;
+            strcpy(output, var1);
+            strcat(output, " = ");
+            strcat(output, var2);
+            for (i = 1; i < constant; i++) {
+                strcat(output, " + ");
+                strcat(output, var2);
+            }
+            strcat(output, ";");
+        } else {
+            strcpy(output, line);
+        }
+    } else {
+        strcpy(output, line);
+    }
+}
+
+int main() {
+    char lines[MAX_LINES][MAX_LEN];
+    char optimized[MAX_LINES][MAX_LEN];
+    int count = 0;
+    char input[MAX_LEN];
+
+    printf("Enter code lines (end with an empty line):\n");
+
+    while (count < MAX_LINES) {
+        if (fgets(input, MAX_LEN, stdin) == NULL)
+            break;
+        trim(input);
+        if (strlen(input) == 0)
+            break;
+        strcpy(lines[count], input);
+        count++;
+    }
+
+    printf("\nOptimized Code:\n");
+    {
+        int i;
+        for (i = 0; i < count; i++) {
+            optimize_line(lines[i], optimized[i]);
+            printf("%s\n", optimized[i]);
+        }
+    }
+
+    return 0;
+}

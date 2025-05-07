@@ -1,0 +1,250 @@
+package cd_ese;
+
+import java.util.*;
+
+public class ConstantPropagation {
+
+    static class Quadruple {
+        String op, arg1, arg2, result;
+
+        public Quadruple(String op, String arg1, String arg2, String result) {
+            this.op = op;
+            this.arg1 = arg1;
+            this.arg2 = arg2;
+            this.result = result;
+        }
+
+        @Override
+        public String toString() {
+            if (op.equals("assign")) {
+                return result + " = " + arg1;
+            } else {
+                return result + " = " + arg1 + " " + op + " " + arg2;
+            }
+        }
+    }
+
+    // Check if a string is a numeric constant
+    public static boolean isConstant(String s) {
+        if (s == null || s.isEmpty()) return false;
+        try {
+            Integer.parseInt(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    // Propagate constants in the quadruples
+    public static void constantPropagation(List<Quadruple> quadruples) {
+        Map<String, String> constValues = new HashMap<>(); // Map to store constant values of variables
+
+        for (int i = 0; i < quadruples.size(); i++) {
+            Quadruple q = quadruples.get(i);
+
+            // Propagate constants for arg1 and arg2 if they are constant
+            if (isConstant(q.arg1)) {
+                constValues.put(q.arg1, q.arg1);
+            } else if (constValues.containsKey(q.arg1)) {
+                q.arg1 = constValues.get(q.arg1); // Replace with constant value
+            }
+
+            if (isConstant(q.arg2)) {
+                constValues.put(q.arg2, q.arg2);
+            } else if (constValues.containsKey(q.arg2)) {
+                q.arg2 = constValues.get(q.arg2); // Replace with constant value
+            }
+
+            // If both args are constants, perform constant folding (evaluate the expression)
+            if (isConstant(q.arg1) && isConstant(q.arg2)) {
+                int val1 = Integer.parseInt(q.arg1);
+                int val2 = Integer.parseInt(q.arg2);
+                int result = compute(q.op, val1, val2);
+
+                // Replace the operation with a constant result
+                q.op = "assign";
+                q.arg1 = String.valueOf(result);
+                q.arg2 = "";
+            }
+
+            // Record the assignment of constant values
+            if (q.op.equals("assign") && isConstant(q.arg1)) {
+                constValues.put(q.result, q.arg1);
+            }
+        }
+    }
+
+    // Perform the constant operation
+    public static int compute(String op, int a, int b) {
+        switch (op) {
+            case "+":
+                return a + b;
+            case "-":
+                return a - b;
+            case "*":
+                return a * b;
+            case "/":
+                if (b != 0) return a / b;
+                return 0; // In case of division by zero
+            default:
+                return 0;
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        List<Quadruple> quadruples = new ArrayList<>();
+
+        System.out.print("Enter number of quadruples: ");
+        int n = scanner.nextInt();
+        scanner.nextLine();  // Consume newline
+
+        System.out.println("Enter each quadruple in the format: op arg1 arg2 result");
+        for (int i = 0; i < n; i++) {
+            System.out.print("Quadruple " + (i + 1) + ": ");
+            String[] parts = scanner.nextLine().split("\\s+");
+            if (parts.length != 4) {
+                System.out.println("Invalid input. Please enter 4 elements.");
+                i--;  // Repeat this iteration
+                continue;
+            }
+            quadruples.add(new Quadruple(parts[0], parts[1], parts[2], parts[3]));
+        }
+
+        // Perform constant propagation optimization
+        constantPropagation(quadruples);
+
+        // Print optimized quadruples
+        System.out.println("\nOptimized Quadruples (After Constant Propagation)");
+        System.out.println("----------------------------------------------");
+        for (int i = 0; i < quadruples.size(); i++) {
+            System.out.println(i + ": " + quadruples.get(i));
+        }
+    }
+}
+-----------------------------------------------------------------------------------------------------------------------------------------------
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_QUADS 100
+
+// Struct to store quadruples
+typedef struct {
+    char op[3];
+    char arg1[10];
+    char arg2[10];
+    char result[10];
+} Quadruple;
+
+// Helper function to check if a string is a constant (integer)
+int isConstant(char* str) {
+    int i;
+    if (str == NULL || strlen(str) == 0) return 0;
+    for (i = 0; i < strlen(str); i++) {
+        if (!isdigit(str[i])) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+// Perform the constant operation
+int compute(char* op, int a, int b) {
+    if (strcmp(op, "+") == 0) return a + b;
+    if (strcmp(op, "-") == 0) return a - b;
+    if (strcmp(op, "*") == 0) return a * b;
+    if (strcmp(op, "/") == 0) return (b != 0) ? a / b : 0; // Avoid division by zero
+    return 0;
+}
+
+// Perform constant propagation optimization
+void constantPropagation(Quadruple* quads, int* numQuads) {
+    char constValues[26][10];  // Store constant values for variables (assuming variables are single letters)
+    int i;
+    for (i = 0; i < 26; i++) {
+        constValues[i][0] = '\0';
+    }
+
+    for (i = 0; i < *numQuads; i++) {
+        Quadruple* q = &quads[i];
+
+        // Check if arg1 and arg2 are constants and propagate them
+        if (isConstant(q->arg1)) {
+            strcpy(constValues[q->result[0] - 'a'], q->arg1); // Store constant value
+        } else if (q->arg1[0] >= 'a' && q->arg1[0] <= 'z' && constValues[q->arg1[0] - 'a'][0] != '\0') {
+            strcpy(q->arg1, constValues[q->arg1[0] - 'a']); // Replace with constant value
+        }
+
+        if (isConstant(q->arg2)) {
+            // Don't store if arg2 is constant but not assigned to a variable
+        } else if (q->arg2[0] >= 'a' && q->arg2[0] <= 'z' && constValues[q->arg2[0] - 'a'][0] != '\0') {
+            strcpy(q->arg2, constValues[q->arg2[0] - 'a']); // Replace with constant value
+        }
+
+        // If both operands are constants, perform constant folding
+        if (isConstant(q->arg1) && isConstant(q->arg2)) {
+            int val1 = atoi(q->arg1);
+            int val2 = atoi(q->arg2);
+            int result = compute(q->op, val1, val2);
+
+            // Replace the operation with a constant result
+            strcpy(q->op, "assign");
+            sprintf(q->arg1, "%d", result);
+            q->arg2[0] = '\0';  // Clear arg2 for the assignment
+
+            // Store the result
+            strcpy(constValues[q->result[0] - 'a'], q->arg1);
+        }
+
+        // If the operation is an assignment and arg1 is a constant, store it
+        if (strcmp(q->op, "assign") == 0 && isConstant(q->arg1)) {
+            strcpy(constValues[q->result[0] - 'a'], q->arg1);
+        }
+    }
+}
+
+// Function to print quadruples
+void printQuadruples(Quadruple* quads, int numQuads, const char* title) {
+    int i;
+    printf("\n%s\n", title);
+    printf("----------------------------\n");
+    for (i = 0; i < numQuads; i++) {
+        if (strcmp(quads[i].op, "assign") == 0)
+            printf("%d: %s = %s\n", i, quads[i].result, quads[i].arg1);
+        else
+            printf("%d: %s = %s %s %s\n", i, quads[i].result, quads[i].arg1, quads[i].op, quads[i].arg2);
+    }
+}
+
+int main() {
+    int numQuads;
+    int i;
+
+    // Input the number of quadruples
+    printf("Enter number of quadruples: ");
+    scanf("%d", &numQuads);
+    getchar();  // Consume newline after entering numQuads
+
+    // Array to store the quadruples
+    Quadruple quads[MAX_QUADS];
+
+    // Input each quadruple
+    printf("Enter each quadruple in the format: op arg1 arg2 result\n");
+    for (i = 0; i < numQuads; i++) {
+        printf("Quadruple %d: ", i + 1);
+        scanf("%s %s %s %s", quads[i].op, quads[i].arg1, quads[i].arg2, quads[i].result);
+    }
+
+    // Print original quadruples
+    printQuadruples(quads, numQuads, "Original Quadruples");
+
+    // Perform constant propagation optimization
+    constantPropagation(quads, &numQuads);
+
+    // Print optimized quadruples
+    printQuadruples(quads, numQuads, "Optimized Quadruples (After Constant Propagation)");
+
+    return 0;
+}

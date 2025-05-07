@@ -1,0 +1,750 @@
+pacman -S mingw-w64-x86_64-flex mingw-w64-x86_64-bison
+pacman -Syu
+pcman -Su
+pacman -S flex bison
+
+============C LANG==========
+
+%{
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+extern YY_BUFFER_STATE yy_scan_string(const char *str);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
+
+int line = 1;
+
+void print_token(const char* lexeme, const char* type) {
+    printf("| %-4d | %-15s | %-10s |\n", line, lexeme, type);
+}
+%}
+
+%option noyywrap
+
+KEYWORDS    int|float|char|if|else|for|while|do|return|void|main
+ID          [a-zA-Z_][a-zA-Z0-9_]*
+NUMBER      [0-9]+(\.[0-9]+)?
+OPERATOR    (\+\+|--|==|!=|<=|>=|&&|\|\||[+\-*/%=<>])
+DELIMITER   [();{},\[\]]
+STRING      \"([^\\\"]|\\.)*\"
+COMMENT1    "//".*
+%%
+
+{KEYWORDS}        { print_token(yytext, "KEYWORD"); }
+{ID}              { print_token(yytext, "IDENTIFIER"); }
+{NUMBER}          { print_token(yytext, "NUMBER"); }
+{STRING}          {
+                     char str[100];
+                     int j = 0;
+                     for (int i = 1; i < yyleng - 1; i++) {
+                         str[j++] = yytext[i];
+                     }
+                     str[j] = '\0';
+                     printf("| %-4d | \"%-13s\" | %-10s |\n", line, str, "STRING");
+                 }
+{OPERATOR}        { print_token(yytext, "OPERATOR"); }
+{DELIMITER}       { print_token(yytext, "DELIMITER"); }
+{COMMENT1}        ;
+"/*"([^*]*\*+)*([^*/][^*]*\*+)*"/"  ;   // COMMENT2 (multi-line comment)
+\n                { line++; }
+[ \t\r]+          ;
+.                 { print_token(yytext, "UNKNOWN"); }
+
+%%
+
+int main() {
+    char input[4096];
+    int c, idx = 0;
+
+    printf("Enter C code (end with Ctrl+D or Ctrl+Z):\n");
+
+    while ((c = getchar()) != EOF && idx < sizeof(input) - 1) {
+        input[idx++] = c;
+    }
+    input[idx] = '\0';
+
+    printf("\nEntered Code:\n%s\n", input);
+
+    YY_BUFFER_STATE buffer = yy_scan_string(input);
+
+    printf("\n| %-4s | %-15s | %-10s |\n", "Line", "Lexeme", "Token");
+    printf("|------|-----------------|------------|\n");
+    yylex();
+
+    yy_delete_buffer(buffer);
+    return 0;
+}
+//Running cmds...flex C_Lex.l  
+//gcc lex.yy.c -o c_lexer
+//c_lexer.exe
+----------------------------------------------------------------------------------------------------------------
+============SQL==========
+
+%{
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+extern YY_BUFFER_STATE yy_scan_string(const char *str);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
+
+int line = 1;
+
+void print_token(const char* lexeme, const char* type) {
+    printf("| %-4d | %-15s | %-10s |\n", line, lexeme, type);
+}
+%}
+
+%option noyywrap
+
+DIGIT       [0-9]
+ID          [a-zA-Z_][a-zA-Z0-9_]*
+STRING      \'[^\']*\'|\"[^\"]*\"
+OPERATOR    [=<>+\-*/]
+DELIMITER   [!(),;]
+
+%%
+
+"SELECT"|"FROM"|"WHERE"|"INSERT"|"INTO"|"VALUES"|"UPDATE"|"SET"|"DELETE"|"CREATE"|"TABLE"|"DROP"|"ALTER"|"JOIN" {
+    print_token(yytext, "KEYWORD");
+}
+
+{ID}             { print_token(yytext, "IDENTIFIER"); }
+{DIGIT}+         { print_token(yytext, "NUMBER"); }
+
+{STRING}         {
+                    char stripped[100];
+                    int j = 0;
+                    for (int i = 1; i < yyleng - 1; i++) {
+                        stripped[j++] = yytext[i];
+                    }
+                    stripped[j] = '\0';
+                    printf("| %-4d | \"%-13s\" | %-10s |\n", line, stripped, "STRING");
+                }
+
+{OPERATOR}       { print_token(yytext, "OPERATOR"); }
+{DELIMITER}      { print_token(yytext, "DELIMITER"); }
+\n               { line++; }
+[ \t\r]+         ;
+.                { print_token(yytext, "UNKNOWN"); }
+
+%%
+
+int main() {
+    char input[2048];
+    int c, idx = 0;
+
+    printf("Enter SQL query (end with Ctrl+D or Ctrl+Z):\n");
+
+    while ((c = getchar()) != EOF && idx < sizeof(input) - 1) {
+        input[idx++] = c;
+    }
+    input[idx] = '\0';
+
+    printf("\nEntered Query:\n%s\n", input);
+
+    YY_BUFFER_STATE buffer = yy_scan_string(input);
+
+    printf("\n| %-4s | %-15s | %-10s |\n", "Line", "Lexeme", "Token");
+    printf("|------|-----------------|------------|\n");
+    yylex();
+
+    yy_delete_buffer(buffer);
+    return 0;
+}
+//RUNNING CMD .....flex Sql_lex.l
+//gcc lex.yy.c -o sql_lex
+//sql_lexer.exe
+----------------------------------------------------------------------------------------------------------------
+============CPP==========
+
+
+%{
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+extern YY_BUFFER_STATE yy_scan_string(const char *str);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
+
+int line = 1;
+
+void print_token(const char* lexeme, const char* type) {
+    printf("| %-4d | %-15s | %-10s |\n", line, lexeme, type);
+}
+%}
+
+%option noyywrap
+
+KEYWORDS    int|float|char|if|else|for|while|do|return|void|main|class|public|private|protected|virtual|static|template|namespace|using
+ID          [a-zA-Z_][a-zA-Z0-9_]*
+NUMBER      [0-9]+(\.[0-9]+)?
+OPERATOR    (\+\+|--|==|!=|<=|>=|&&|\|\||[+\-*/%=<>!&|^])|(::)|[->]
+DELIMITER   [();{},\[\]]
+STRING      \"([^\\\"]|\\.)*\"
+COMMENT1    "//".*
+COMMENT2    "/\\*".*"\*/"
+TEMPLATE    "<[^>]*>"
+
+%%
+
+{KEYWORDS}        { print_token(yytext, "KEYWORD"); }
+{ID}              { print_token(yytext, "IDENTIFIER"); }
+{NUMBER}          { print_token(yytext, "NUMBER"); }
+{STRING}          {
+                     char str[100];
+                     int j = 0;
+                     for (int i = 1; i < yyleng - 1; i++) {
+                         str[j++] = yytext[i];
+                     }
+                     str[j] = '\0';
+                     printf("| %-4d | \"%-13s\" | %-10s |\n", line, str, "STRING");
+                 }
+{OPERATOR}        { print_token(yytext, "OPERATOR"); }
+{DELIMITER}       { print_token(yytext, "DELIMITER"); }
+{COMMENT1}        ;
+{COMMENT2}        ;
+{TEMPLATE}        { print_token(yytext, "TEMPLATE"); }
+\n                { line++; }
+[ \t\r]+          ;
+.                 { print_token(yytext, "UNKNOWN"); }
+
+%%
+
+int main() {
+    char input[4096];
+    int c, idx = 0;
+
+    printf("Enter C++ code (end with Ctrl+D or Ctrl+Z):\n");
+
+    while ((c = getchar()) != EOF && idx < sizeof(input) - 1) {
+        input[idx++] = c;
+    }
+    input[idx] = '\0';
+
+    printf("\nEntered Code:\n%s\n", input);
+
+    YY_BUFFER_STATE buffer = yy_scan_string(input);
+
+    printf("\n| %-4s | %-15s | %-10s |\n", "Line", "Lexeme", "Token");
+    printf("|------|-----------------|------------|\n");
+    yylex();
+
+    yy_delete_buffer(buffer);
+    return 0;
+}
+//RUNNING...flex cpp_lex.l
+//gcc lex.yy.c -o cpp_lex
+//cpp_lexer.exe
+----------------------------------------------------------------------------------------------------------------
+============HTML==========
+%{
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+extern YY_BUFFER_STATE yy_scan_string(const char *str);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
+
+int line = 1;
+
+void print_token(const char* lexeme, const char* type) {
+    printf("| %-4d | %-15s | %-10s |\n", line, lexeme, type);
+}
+%}
+
+%option noyywrap
+
+TAG_CLOSE        \<\/[a-zA-Z][a-zA-Z0-9-]*\>
+TAG_OPEN         \<[a-zA-Z][a-zA-Z0-9-]*\>
+ATTRIBUTE_VALUE  \"[^\"]*\"
+ATTRIBUTE        [a-zA-Z][a-zA-Z0-9-]*=
+COMMENT          \<!--([^-\n]|(-[^-])|(--[^>]))*--\>
+DELIMITER        [<>]
+TEXT_CONTENT     [^<>\n\"]+
+WHITESPACE       [ \t\r\n]+
+
+%%
+
+{COMMENT}          { print_token(yytext, "COMMENT"); }
+{ATTRIBUTE_VALUE}  { print_token(yytext, "ATTRIBUTE_VALUE"); }
+{ATTRIBUTE}        { print_token(yytext, "ATTRIBUTE"); }
+{TAG_CLOSE}        { print_token(yytext, "TAG_CLOSE"); }
+{TAG_OPEN}         { print_token(yytext, "TAG_OPEN"); }
+{TEXT_CONTENT}     { print_token(yytext, "TEXT_CONTENT"); }
+{DELIMITER}        { print_token(yytext, "DELIMITER"); }
+{WHITESPACE}       { /* Ignore whitespace */ }
+.                  { print_token(yytext, "UNKNOWN"); }
+
+%%
+
+int main() {
+    char input[4096];
+    int c, idx = 0;
+
+    printf("Enter HTML code (end with Ctrl+D or Ctrl+Z):\n");
+
+    while ((c = getchar()) != EOF && idx < sizeof(input) - 1) {
+        input[idx++] = c;
+    }
+    input[idx] = '\0';
+
+    printf("\nEntered HTML:\n%s\n", input);
+
+    YY_BUFFER_STATE buffer = yy_scan_string(input);
+
+    printf("\n| %-4s | %-15s | %-10s |\n", "Line", "Lexeme", "Token");
+    printf("|------|-----------------|------------|\n");
+    yylex();
+
+    yy_delete_buffer(buffer);
+    return 0;
+}
+//RUNNIMG CMD
+//flex HTML_Lex.l
+//gcc lex.yy.c -o HTML_Lex
+//HTML_Lex.exe
+
+
+----------------------------------------------------------------------------------------------------------------
+============JAVA==========
+
+%{
+#include<stdio.h>
+int lineno = 1;
+%}
+%option noyywrap
+
+ID [a-zA-Z_][a-zA-Z0-9_]*
+NUM [0-9]+|[0-9]+[.0-9]+
+OPERATOR  "="|"+"|"-"|"*"|"/"
+CONDI_OP "=="|"<="|">="|">"|"<"
+DELIMITER [(){};\[\]]
+KEYWORDS "class"|"public"|"private"|"static"|"void"|"int"|"String"|"if"|"else"
+
+%%
+\n {lineno++;}
+{KEYWORDS}  {printf("%d \tKEY \t%s\n",lineno,yytext);}
+{ID}    {printf("%d \tID \t%s\n",lineno,yytext);}
+{NUM}   {printf("%d \tNUM \t%s\n",lineno,yytext);}
+{OPERATOR}    {printf("%d \tOP \t%s\n",lineno,yytext);}
+{CONDI_OP}    {printf("%d \tCOP \t%s\n",lineno,yytext);}
+{DELIMITER}     {printf("%d \tDIL \t%s\n",lineno,yytext);}
+[ \t\r]+    { /* ignore whitespace */ }
+.   { printf("%d \tUnknown: \t%s\n",lineno, yytext); }
+%%
+
+int main(int argc, char **argv){
+    if(argc > 1){
+        yyin = fopen(argv[1],"r");
+    }
+    printf("Line\tToken\tLexeme\n");
+    yylex();
+    return 0;
+}
+INPUT:
+public class Main {
+    public static void main(String[] args) {
+        int num = 10;
+    }
+}
+RUNNING CMD:
+//flex Java_Lex.l
+//gcc lex.yy.c -o Java_Lexer.l
+//Java_Lex.exe javaIO.txt
+
+----------------------------------------------------------------------------------------------------------------
+============VALIDATING INPUT==========
+%{
+#include <stdio.h>
+#include <string.h>
+int lineno = 1;
+
+// Function to print table header
+void printTableHeader() {
+    printf("+--------+----------------+--------------------------+\n");
+    printf("| Line # | Token Type     | Token Value              |\n");
+    printf("+--------+----------------+--------------------------+\n");
+}
+%}
+
+%option noyywrap
+
+NAME       [A-Z][a-zA-Z ]+
+AGE        [0-9]{1,3}
+EMAIL      [a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}
+COMMA      ,
+NEWLINE    \n
+WHITESPACE [ \t\r]+
+
+%%
+
+{NAME}        { printf("| %-6d | %-14s | %-24s |\n", lineno, "NAME", yytext); }
+{AGE}         { printf("| %-6d | %-14s | %-24s |\n", lineno, "AGE", yytext); }
+{EMAIL}       { printf("| %-6d | %-14s | %-24s |\n", lineno, "EMAIL", yytext); }
+{COMMA}       { printf("| %-6d | %-14s | %-24s |\n", lineno, "COMMA", ","); }
+{NEWLINE}     { lineno++; }
+{WHITESPACE}  { /* skip */ }
+.             { printf("| %-6d | %-14s | %-24s |\n", lineno, "INVALID", yytext); }
+
+%%
+
+int main(int argc, char **argv) {
+    if (argc > 1) {
+        FILE *f = fopen(argv[1], "r");
+        if (!f) {
+            perror("Cannot open file");
+            return 1;
+        }
+        yyin = f;
+    }
+    printf("Lexical analysis started...\n\n");
+    printTableHeader();
+    yylex();
+    printf("+--------+----------------+--------------------------+\n");
+    printf("\nLexical analysis finished.\n");
+    return 0;
+}
+IMPUT:
+Name, Age, Email
+Samiksha Sahu, ab, SAM@.com
+Sarika, 30, sarikasahu@mail.com
+RUNNING CMD:
+//flex validating.l
+//gcc lex.yy.c -o validating_lexer.l
+//validating.exe input.txt
+
+----------------------------------------------------------------------------------------------------------------
+============VOWELS==========
+
+%{
+#include <stdio.h>
+
+int vowels = 0;
+int consonants = 0;
+int digits = 0;
+int spaces = 0;
+%}
+
+%option noyywrap
+
+%%
+
+[aAeEiIoOuU]                 { vowels++; }
+[b-df-hj-np-tv-zB-DF-HJ-NP-TV-Z] { consonants++; }
+[0-9]                        { digits++; }
+[ \t\n\r]                    { spaces++; }
+.                            { /* Ignore other characters */ }
+
+%%
+
+int main() {
+    printf("Enter text (Ctrl+Z to end input):\n");
+    yylex();
+
+    printf("\nResults:\n");
+    printf("Vowels     : %d\n", vowels);
+    printf("Consonants : %d\n", consonants);
+    printf("Digits     : %d\n", digits);
+    printf("Whitespace : %d\n", spaces);
+
+    return 0;
+}
+RUNNING CMD:
+flex vowel.l
+gcc lex.yy.c -o vowel_lexer
+vowel_lexer.exe
+
+----------------------------------------------------------------------------------------------------------------
+============PALINDROME==========
+
+%{
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+#define MAX_LEN 1000
+char buffer[MAX_LEN];
+int len = 0;
+
+void check_palindrome() {
+    buffer[len] = '\0';
+    int start = 0, end = len - 1;
+    int is_palindrome = 1;
+    while (start < end) {
+        if (buffer[start++] != buffer[end--]) {
+            is_palindrome = 0;
+            break;
+        }
+    }
+
+    if (len > 0) {
+        printf("Input: %s\n", buffer);
+        if (is_palindrome)
+            printf("=> Palindrome\n\n");
+        else
+            printf("=> Not a palindrome\n\n");
+    }
+
+    len = 0;
+}
+%}
+
+%option noyywrap
+
+%%
+
+[a-zA-Z]   { buffer[len++] = tolower(yytext[0]); }
+\n         { check_palindrome(); }
+.          { }
+
+%%
+
+int main() {
+    printf("Enter text line by line (Ctrl+Z to end input):\n\n");
+    yylex();
+    check_palindrome();
+    return 0;
+}
+flex palin.l
+gcc lex.yy.c -o palin_lex
+palin_lex.exe
+----------------------------------------------------------------------------------------------------------------
+============COUNT WORDS==========
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_WORDS 1000
+#define MAX_LINES 100
+
+typedef struct {
+    char word[100];
+    int count;
+    int lines[MAX_LINES];
+    int lineCount;
+} WordEntry;
+
+WordEntry words[MAX_WORDS];
+int word_count = 0;
+int line_no = 1;
+int total_words = 0; 
+
+void toLower(char *s) {
+    for (int i = 0; s[i]; i++) {
+        s[i] = tolower(s[i]);
+    }
+}
+
+void addWord(char *text) {
+    toLower(text);
+    for (int i = 0; i < word_count; i++) {
+        if (strcmp(words[i].word, text) == 0) {
+            words[i].count++;
+            if (words[i].lines[words[i].lineCount - 1] != line_no) {
+                words[i].lines[words[i].lineCount++] = line_no;
+            }
+            total_words++;  
+            return;
+        }
+    }
+    strcpy(words[word_count].word, text);
+    words[word_count].count = 1;
+    words[word_count].lines[0] = line_no;
+    words[word_count].lineCount = 1;
+    word_count++;
+    total_words++;  
+}
+%}
+
+%option noyywrap
+
+%%
+
+[a-zA-Z]+       { addWord(yytext); }
+\n              { line_no++; }
+[ \t\r]+        { }
+.               { }
+
+%%
+
+int main() {
+    printf("Enter text (Ctrl+Z to end input):\n\n");
+    yylex();
+
+    printf("\nWord\t\tCount\tLine Numbers\n");
+    printf("-------------------------------------------------------------\n");
+    for (int i = 0; i < word_count; i++) {
+        printf("%-15s\t%-5d\t", words[i].word, words[i].count);
+        for (int j = 0; j < words[i].lineCount; j++) {
+            printf("%d ", words[i].lines[j]);
+        }
+        printf("\n");
+    }
+
+    printf("\nTotal Words: %d\n", total_words); 
+
+    return 0;
+}
+//flex word_count.l
+//gcc lex.yy.c -o word_count_lexer
+//word_count_lexer.exe
+
+----------------------------------------------------------------------------------------------------------------
+============ENGLISH LANGUAGE==========
+%{
+#include <stdio.h>
+extern FILE *yyin;
+int lno = 1;
+
+#define NUMBER      100
+#define PRONOUN     101
+#define NOUN        102
+#define ADJECTIVE   103
+#define ADVERB      104
+#define VERB        105
+#define WORD        106
+#define QUOTATION   107
+#define PUNCTUATION 108
+#define ERROR       999
+%}
+
+%%
+
+[0-9]+ { 
+    printf("%-10d %-15s %-15s %d\n", lno, yytext, "NUMBER", NUMBER); 
+}
+
+"I"|"you"|"he"|"she"|"it"|"we"|"they"|"me"|"him"|"her"|"us"|"them"|"my"|"your"|"his"|"its"|"our"|"their"|"mine"|"yours"|"hers"|"ours"|"theirs"|"myself"|"yourself"|"himself"|"herself"|"itself"|"ourselves"|"yourselves"|"themselves" {
+    printf("%-10d %-15s %-15s %d\n", lno, yytext, "PRONOUN", PRONOUN);
+}
+
+[A-Z][a-z]+ {  
+    printf("%-10d %-15s %-15s %d\n", lno, yytext, "NOUN", NOUN);
+}
+
+[a-z]+("able"|"ible"|"al"|"ant"|"ent"|"ary"|"ory"|"ed"|"en"|"ful"|"ic"|"ical"|"ish"|"ive"|"less"|"like"|"ly"|"ous"|"ious"|"eous"|"y"|"some"|"ing"|"ese"|"esque"|"ian"|"ar"|"ine"|"istic"|"worthy")$ {  
+    printf("%-10d %-15s %-15s %d\n", lno, yytext, "ADJECTIVE", ADJECTIVE);
+}
+
+[a-z]+("ly") {  
+    printf("%-10d %-15s %-15s %d\n", lno, yytext, "ADVERB", ADVERB);
+}
+
+[a-z]+("ed"|"ing") {  
+    printf("%-10d %-15s %-15s %d\n", lno, yytext, "VERB", VERB);
+}
+
+[a-z]+ {  
+    printf("%-10d %-15s %-15s %d\n", lno, yytext, "WORD", WORD);
+}
+
+[ \t]+ { }
+
+\n { lno++; }
+
+['"“”] {  
+    printf("%-10d %-15s %-15s %d\n", lno, yytext, "QUOTATION", QUOTATION);
+}
+
+[.,!?;:] {  
+    printf("%-10d %-15s %-15s %d\n", lno, yytext, "PUNCTUATION", PUNCTUATION);
+}
+
+. { 
+    printf("%-10d %-15s %-15s %d\n", lno, yytext, "ERROR", ERROR);
+}
+%%
+
+int yywrap() { return 1; }
+
+int main() {
+    FILE *f = fopen("english.txt", "r");
+    if (!f) {
+        perror("Failed to open english.txt");
+        return 1;
+    }
+    yyin = f;
+
+    printf("%-10s %-15s %-15s %s\n", "Line No.", "Lexeme", "Token", "Token-Value");
+    printf("---------------------------------------------------------------\n");
+
+    yylex();
+    fclose(f);
+    return 0;
+}
+//flex English.l
+//gcc lex.yy.c -o eng_lexar
+//eng _lexar.exe input.txt
+----------------------------------------------------------------------------------------------------------------
+
+================SINGLE_LETTER_DOUBLE_LETTER==================
+%{
+#include <stdio.h>
+#include <string.h>
+
+#define MAX 100
+
+typedef struct {
+    char type[20];
+    char lexeme[200];
+} Token;
+
+Token tokens[MAX];
+int token_count = 0;
+int single = 0, double_letter = 0;
+
+void add_tokens(const char* type, const char* lexeme) {
+    if (token_count < MAX) {
+        strcpy(tokens[token_count].type, type);
+        strcpy(tokens[token_count].lexeme, lexeme);
+        token_count++;
+    }
+}
+%}
+
+%option noyywrap
+
+SINGLE    [a-zA-Z]
+DOUBLE    [a-zA-Z]{2}
+
+%%
+
+{DOUBLE}   { add_tokens("double-letter", yytext); double_letter++; }
+{SINGLE}   { add_tokens("single-letter", yytext); single++; }
+[ \t\n.,;!?] ;
+.           ;
+
+%%
+
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        printf("Usage: %s <filename>\n", argv[0]);
+        return 1;
+    }
+
+    FILE *fp = fopen(argv[1], "r");
+    if (!fp) {
+        perror("File open error");
+        return 1;
+    }
+
+    yyin = fp;
+    yylex();
+    fclose(fp);
+
+    printf("\n--- Single and Double Letter Tokens ---\n");
+    printf("%-15s | %-15s\n", "Type", "Lexeme");
+    printf("---------------+----------------\n");
+    for (int i = 0; i < token_count; ++i) {
+        printf("%-15s | %-15s\n", tokens[i].type, tokens[i].lexeme);
+    }
+
+    printf("\nTotal Single Letters: %d\n", single);
+    printf("Total Double Letters: %d\n", double_letter);
+    return 0;
+}

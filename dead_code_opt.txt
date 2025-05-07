@@ -1,0 +1,180 @@
+5
+assign a _ t1
++ t1 b t2
+assign 5 _ x
+* t2 c t3
+- x y t4
+
+
+#include <stdio.h>
+#include <string.h>
+
+#define MAX 100
+
+// Structure to represent a quadruple
+typedef struct {
+    char op[10];
+    char arg1[10];
+    char arg2[10];
+    char result[10];
+    int isLive; // 1 if used, 0 if dead
+} Quadruple;
+
+// Function to check if a variable is used later
+int isUsedLater(Quadruple quads[], int n, int index, char *var) {
+    int i;
+    for (i = index + 1; i < n; i++) {
+        if (strcmp(quads[i].arg1, var) == 0 || strcmp(quads[i].arg2, var) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Dead code elimination
+void deadCodeElimination(Quadruple quads[], int *n) {
+    int i, j;
+    for (i = 0; i < *n; i++) {
+        if (strlen(quads[i].result) > 0 && !isUsedLater(quads, *n, i, quads[i].result)) {
+            // Mark instruction as dead
+            quads[i].isLive = 0;
+        } else {
+            quads[i].isLive = 1;
+        }
+    }
+
+    // Compact the list to remove dead code
+    j = 0;
+    for (i = 0; i < *n; i++) {
+        if (quads[i].isLive) {
+            if (i != j) {
+                quads[j] = quads[i];
+            }
+            j++;
+        }
+    }
+    *n = j;
+}
+
+// Function to print quadruples
+void printQuadruples(Quadruple quads[], int n, const char* title) {
+    int i;
+    printf("\n%s\n", title);
+    printf("-----------------------------\n");
+    for (i = 0; i < n; i++) {
+        if (strcmp(quads[i].op, "assign") == 0) {
+            printf("%d: %s = %s\n", i, quads[i].result, quads[i].arg1);
+        } else {
+            printf("%d: %s = %s %s %s\n", i, quads[i].result, quads[i].arg1, quads[i].op, quads[i].arg2);
+        }
+    }
+}
+
+int main() {
+    int n, i;
+    Quadruple quads[MAX];
+
+    printf("Enter number of quadruples: ");
+    scanf("%d", &n);
+
+    printf("Enter each quadruple in format: op arg1 arg2 result\n");
+    for (i = 0; i < n; i++) {
+        printf("Quadruple %d: ", i + 1);
+        scanf("%s %s %s %s", quads[i].op, quads[i].arg1, quads[i].arg2, quads[i].result);
+    }
+
+    printQuadruples(quads, n, "Original Quadruples");
+
+    deadCodeElimination(quads, &n);
+
+    printQuadruples(quads, n, "Optimized Quadruples (After Dead Code Elimination)");
+
+    return 0;
+}
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+package cd_ese;
+
+import java.util.*;
+
+class Quadruple {
+    String op, arg1, arg2, result;
+    boolean isLive;
+
+    public Quadruple(String op, String arg1, String arg2, String result) {
+        this.op = op;
+        this.arg1 = arg1;
+        this.arg2 = arg2;
+        this.result = result;
+        this.isLive = true;
+    }
+
+    @Override
+    public String toString() {
+        if (op.equals("assign")) {
+            return result + " = " + arg1;
+        } else {
+            return result + " = " + arg1 + " " + op + " " + arg2;
+        }
+    }
+}
+
+public class DeadCodeElimination {
+
+    // Check if result variable is used later
+    public static boolean isUsedLater(List<Quadruple> quads, int startIndex, String var) {
+        for (int i = startIndex + 1; i < quads.size(); i++) {
+            if (quads.get(i).arg1.equals(var) || quads.get(i).arg2.equals(var)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Perform dead code elimination
+    public static void eliminateDeadCode(List<Quadruple> quads) {
+        for (int i = 0; i < quads.size(); i++) {
+            Quadruple q = quads.get(i);
+            if (!isUsedLater(quads, i, q.result)) {
+                q.isLive = false;
+            }
+        }
+
+        // Remove dead code
+        quads.removeIf(q -> !q.isLive);
+    }
+
+    // Print quadruples
+    public static void printQuadruples(List<Quadruple> quads, String title) {
+        System.out.println("\n" + title);
+        System.out.println("-----------------------------");
+        for (int i = 0; i < quads.size(); i++) {
+            System.out.println(i + ": " + quads.get(i));
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        List<Quadruple> quads = new ArrayList<>();
+
+        System.out.print("Enter number of quadruples: ");
+        int n = Integer.parseInt(scanner.nextLine());
+
+        System.out.println("Enter each quadruple in format: op arg1 arg2 result");
+        for (int i = 0; i < n; i++) {
+            System.out.print("Quadruple " + (i + 1) + ": ");
+            String[] parts = scanner.nextLine().trim().split("\\s+");
+            if (parts.length != 4) {
+                System.out.println("Invalid input. Please enter exactly 4 elements.");
+                i--;
+                continue;
+            }
+            quads.add(new Quadruple(parts[0], parts[1], parts[2], parts[3]));
+        }
+
+        printQuadruples(quads, "Original Quadruples");
+        eliminateDeadCode(quads);
+        printQuadruples(quads, "Optimized Quadruples (After Dead Code Elimination)");
+    }
+}
+

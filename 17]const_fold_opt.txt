@@ -1,0 +1,190 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX 100
+
+typedef struct {
+    char op[10];
+    char arg1[20];
+    char arg2[20];
+    char result[20];
+} Quadruple;
+
+// Check if a string is a numeric constant
+int isConstant(char *s) {
+    int i;
+    if (s == NULL || *s == '\0') return 0;
+    for (i = 0; s[i]; i++) {
+        if (!isdigit(s[i]) && !(i == 0 && (s[i] == '-' || s[i] == '+')))
+            return 0;
+    }
+    return 1;
+}
+
+// Perform the constant operation
+int compute(char *op, int a, int b) {
+    if (strcmp(op, "+") == 0) return a + b;
+    if (strcmp(op, "-") == 0) return a - b;
+    if (strcmp(op, "*") == 0) return a * b;
+    if (strcmp(op, "/") == 0 && b != 0) return a / b;
+    return 0;
+}
+
+int main() {
+    int n, i;
+    Quadruple quads[MAX], optimized[MAX];
+    int optCount = 0;
+
+    printf("Enter number of quadruples: ");
+    scanf("%d", &n);
+
+    printf("Enter each quadruple in the format: op arg1 arg2 result\n");
+    for (i = 0; i < n; i++) {
+        printf("Quadruple %d: ", i + 1);
+        scanf("%s %s %s %s", quads[i].op, quads[i].arg1, quads[i].arg2, quads[i].result);
+    }
+
+    for (i = 0; i < n; i++) {
+        if (isConstant(quads[i].arg1) && isConstant(quads[i].arg2)) {
+            int val1 = atoi(quads[i].arg1);
+            int val2 = atoi(quads[i].arg2);
+            int result = compute(quads[i].op, val1, val2);
+            
+            strcpy(optimized[optCount].op, "assign");
+            sprintf(optimized[optCount].arg1, "%d", result);
+            strcpy(optimized[optCount].arg2, "");
+            strcpy(optimized[optCount].result, quads[i].result);
+        } else {
+            optimized[optCount] = quads[i];
+        }
+        optCount++;
+    }
+
+    // Print original quadruples
+    printf("\nOriginal Quadruples\n--------------------\n");
+    for (i = 0; i < n; i++) {
+        printf("%d: %s = %s %s %s\n", i, quads[i].result, quads[i].arg1, quads[i].op, quads[i].arg2);
+    }
+
+    // Print optimized quadruples
+    printf("\nOptimized Quadruples (After Constant Folding)\n----------------------------------------------\n");
+    for (i = 0; i < optCount; i++) {
+        if (strcmp(optimized[i].op, "assign") == 0)
+            printf("%d: %s = %s\n", i, optimized[i].result, optimized[i].arg1);
+        else
+            printf("%d: %s = %s %s %s\n", i, optimized[i].result, optimized[i].arg1, optimized[i].op, optimized[i].arg2);
+    }
+
+    return 0;
+}
+----------------------------------------------------
+Quadruple 1: + 2 3 t1
+Quadruple 2: * t1 4 t2
+Quadruple 3: + 5 6 t3
+----------------------------------------------------
+package cd_ese;
+
+import java.util.*;
+
+public class ConstantFolding {
+
+    static class Quadruple {
+        String op, arg1, arg2, result;
+
+        public Quadruple(String op, String arg1, String arg2, String result) {
+            this.op = op;
+            this.arg1 = arg1;
+            this.arg2 = arg2;
+            this.result = result;
+        }
+
+        @Override
+        public String toString() {
+            if (op.equals("assign")) {
+                return result + " = " + arg1;
+            } else {
+                return result + " = " + arg1 + " " + op + " " + arg2;
+            }
+        }
+    }
+
+    // Check if a string is a numeric constant
+    public static boolean isConstant(String s) {
+        if (s == null || s.isEmpty()) return false;
+        try {
+            Integer.parseInt(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    // Perform the constant operation
+    public static int compute(String op, int a, int b) {
+        switch (op) {
+            case "+":
+                return a + b;
+            case "-":
+                return a - b;
+            case "*":
+                return a * b;
+            case "/":
+                if (b != 0) return a / b;
+                return 0;  // In case of division by zero, though should be avoided
+            default:
+                return 0;
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        List<Quadruple> quadruples = new ArrayList<>();
+        List<Quadruple> optimized = new ArrayList<>();
+
+        System.out.print("Enter number of quadruples: ");
+        int n = scanner.nextInt();
+        scanner.nextLine();  // Consume newline
+
+        System.out.println("Enter each quadruple in the format: op arg1 arg2 result");
+        for (int i = 0; i < n; i++) {
+            System.out.print("Quadruple " + (i + 1) + ": ");
+            String[] parts = scanner.nextLine().split("\\s+");
+            if (parts.length != 4) {
+                System.out.println("Invalid input. Please enter 4 elements.");
+                i--;  // Repeat this iteration
+                continue;
+            }
+            quadruples.add(new Quadruple(parts[0], parts[1], parts[2], parts[3]));
+        }
+
+        // Optimization pass: Constant folding
+        for (Quadruple q : quadruples) {
+            if (isConstant(q.arg1) && isConstant(q.arg2)) {
+                int val1 = Integer.parseInt(q.arg1);
+                int val2 = Integer.parseInt(q.arg2);
+                int result = compute(q.op, val1, val2);
+
+                optimized.add(new Quadruple("assign", String.valueOf(result), "", q.result));
+            } else {
+                optimized.add(q);
+            }
+        }
+
+        // Print original quadruples
+        System.out.println("\nOriginal Quadruples");
+        System.out.println("--------------------");
+        for (int i = 0; i < quadruples.size(); i++) {
+            System.out.println(i + ": " + quadruples.get(i));
+        }
+
+        // Print optimized quadruples
+        System.out.println("\nOptimized Quadruples (After Constant Folding)");
+        System.out.println("----------------------------------------------");
+        for (int i = 0; i < optimized.size(); i++) {
+            System.out.println(i + ": " + optimized.get(i));
+        }
+    }
+}
+
