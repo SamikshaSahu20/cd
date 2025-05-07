@@ -1,0 +1,43 @@
+%{
+#include <stdio.h>
+%}
+
+%%
+
+// Arithmetic operators
+"+"         { printf("Arithmetic Operator: +\n"); }
+"-"         { printf("Arithmetic Operator: -\n"); }
+"*"         { printf("Arithmetic Operator: *\n"); }
+"/"         { printf("Arithmetic Operator: /\n"); }
+"%"         { printf("Arithmetic Operator: %%\n"); }
+
+// Relational operators
+"=="        { printf("Relational Operator: ==\n"); }
+"!="        { printf("Relational Operator: !=\n"); }
+">="        { printf("Relational Operator: >=\n"); }
+"<="        { printf("Relational Operator: <=\n"); }
+">"         { printf("Relational Operator: >\n"); }
+"<"         { printf("Relational Operator: <\n"); }
+
+// Logical operators
+"&&"        { printf("Logical Operator: &&\n"); }
+"||"        { printf("Logical Operator: ||\n"); }
+"!"         { printf("Logical Operator: !\n"); }
+
+// Assignment operator
+"="         { printf("Assignment Operator: =\n"); }
+
+// Ignore whitespace and other characters
+[ \t\n]+    ;
+.           ;  // Ignore anything not matched above
+
+%%
+
+int main() {
+    yylex();
+    return 0;
+}
+
+int yywrap() {
+    return 1;
+}
